@@ -2,7 +2,6 @@
 
 # http://matplotlib.org/faq/virtualenv_faq.html
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import serial
@@ -26,6 +25,24 @@ from scipy.signal import butter, filtfilt, buttord
 
 from sklearn import svm
 
+from scipy.signal import butter, lfilter
+
+import artifact as artifact
+
+def butter_bandpass(lowcut, highcut, fs, order=5):
+    nyq = 0.5 * fs
+    low = lowcut / nyq
+    high = highcut / nyq
+    b, a = butter(order, [low, high], btype='band')
+    return b, a
+
+
+def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
+    b, a = butter_bandpass(lowcut, highcut, fs, order=order)
+    y = lfilter(b, a, data)
+    return y
+
+
 def psd(y):
     # Number of samplepoints
     N = 128
@@ -36,14 +53,15 @@ def psd(y):
     #y = 1*np.sin(10.0 * 2.0*np.pi*x) + 9*np.sin(20.0 * 2.0*np.pi*x)
 
 
+    # Original Bandpass
     fs = 128.0
     fso2 = fs/2
-    Nd,wn = buttord(wp=[9/fso2,11/fso2], ws=[8/fso2,12/fso2],
-       gpass=3.0, gstop=40.0)
+    #Nd,wn = buttord(wp=[9/fso2,11/fso2], ws=[8/fso2,12/fso2],
+    #   gpass=3.0, gstop=40.0)
+    #b,a = butter(Nd,wn,'band')
+    #y = filtfilt(b,a,y)
 
-    b,a = butter(Nd,wn,'band')
-
-    y = filtfilt(b,a,y)
+    y = butter_bandpass_filter(y, 8.0, 15.0, fs, order=6)
 
 
     yf = fft(y)
@@ -56,11 +74,11 @@ def psd(y):
 
     return np.sum(np.abs(yf[0:N/2]))
 
-
 class Plotter:
 
     def __init__(self,rangeval,minval,maxval):
         # You probably won't need this if you're embedding things in a tkinter plot...
+        import matplotlib.pyplot as plt
         plt.ion()
 
         self.x = []
@@ -98,7 +116,7 @@ class Plotter:
         self.line3.set_xdata(self.plotx)
 
         self.fig.canvas.draw()
-        plt.pause(0.01)
+        plt.pause(0.0001)
 
         self.plcounter = self.plcounter+1
 
@@ -170,7 +188,7 @@ class OfflineHeadset:
             self.readcounter = self.readcounter + 1
             return packet
         else:
-            headset.running = False
+            self.running = False
             return None
 
 
@@ -182,7 +200,7 @@ def process(headset):
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
     log = open('data/biosensor-%s.dat' % st, 'w')
-    plotter = Plotter(500,4000,5000)
+    #plotter = Plotter(500,4000,5000)
     print ("Starting BioProcessing Thread...")
     readcounter=0
     iterations=0
@@ -201,29 +219,29 @@ def process(headset):
         interations=iterations+1
         if (packet != None):
             datapoint = [packet.O1[0], packet.O2[0]]
-            plotter.plotdata( [packet.gyro_x, packet.O2[0], packet.O1[0]])
+            #plotter.plotdata( [packet.gyro_x, packet.O2[0], packet.O1[0]])
             log.write( str(packet.gyro_x) + "\t" + str(packet.gyro_y) + "\n" )
 
             window.append( datapoint )
 
             if len(window)>=N:
-                awindow = np.asarray( window )
-                if (afullsignal != None):
-                    awindow = awindow - afullsignal.mean(0)
+                if not artifact.isartifact(window):
+                    awindow = np.asarray( window )
+                    fullsignal = fullsignal + window
+                    afullsignal = np.asarray( fullsignal )
 
-                o1 = psd(awindow[:,0])
-                o2 = psd(awindow[:,1])
+                    if (len(fullsignal) > 0):
+                        awindow = awindow - afullsignal.mean(0)
 
-                print o1, o2
+                    o1 = psd(awindow[:,0])
+                    o2 = psd(awindow[:,1])
 
-                features.append( [o1, o2] )
+                    print o1, o2
 
-                fullsignal.append( window )
-                afullsignal = np.asarray( fullsignal )
+                    features.append( [o1, o2] )
 
                 # Slide window
                 window = window[N/2:N]
-
 
             readcounter=readcounter+1
 
@@ -235,6 +253,72 @@ def process(headset):
 
     return features
 
+def classify(afeatures1, afeatures2):
+
+    data = np.concatenate ((afeatures1,afeatures2))
+    labels = np.concatenate( (np.ones(afeatures1.shape[0]),(np.ones(afeatures2.shape[0])+1) )  )
+
+    clf = svm.SVC(kernel='linear', C = 1.0)
+    clf.fit(data,labels)
+
+    datapoint = afeatures1.mean(0)
+
+    print datapoint
+
+    datapoints = []
+    datapoints.append( datapoint )
+
+    print 'Classifying datapoints...'
+    print(clf.predict(datapoints))
+
+  # raw_input('Ready?')
+  # train()
+  # print data
+  # label = np.asarray(data)
+  # y = np.ones([1,label.shape[0]])
+  # raw_input('Second round?')
+  # train()
+  # print data
+  # label = np.asarray(data)
+  # y = np.concatenate((y,np.zeros([1,label.shape[0]-y.shape[1]])))
+  # print data
+  # print y.shape
+  # y = y.reshape(1,y.shape[0]*y.shape[1])[0]
+  # clf = svm.SVC(kernel='linear', C = 1.0)
+  # clf.fit(data,y)
+  # raw_input('Run?')
+  # run(clf)
+  # print(clf.predict([0.58,0.76]))
+  # headset.close()
+
+
+def featureextractor():
+    headset = OfflineHeadset('Rodrigo',1)
+    features1 = process(headset)
+    headset.close()
+    headset = OfflineHeadset('Rodrigo',2)
+    features2 = process(headset)
+    headset.close()
+
+    afeatures1 = np.asarray(features1)
+    afeatures2 = np.asarray(features2)
+
+    print (afeatures1.mean(0))
+    print (afeatures2.mean(0))
+
+
+    classify(afeatures1, afeatures2)
+
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+
+    ax1.scatter(afeatures1[:,0], afeatures1[:,1], s=10, c='b', marker="x", label='Open')
+    ax1.scatter(afeatures2[:,0], afeatures2[:,1], s=10, c='r', marker="o", label='Closed')
+    plt.xlabel('PSD O2')
+    plt.ylabel('PSD O1')
+    plt.legend(loc='upper left');
+    plt.show()
 
 
 def onemore():
@@ -265,15 +349,22 @@ def onemore():
 
 
 if __name__ == "__main__":
-    while True:
+
+    featureextractor()
+
+
+
+
+    while False:
         KeepRunning = True
         headset = None
         while KeepRunning:
             try:
                 #headset = emotiv.Emotiv()
                 headset = OfflineHeadset('Rodrigo',1)
-                gevent.spawn(headset.setup)
-                g = gevent.spawn(process, headset)
+                #gevent.spawn(headset.setup)
+                #g = gevent.spawn(process, headset)
+                gevent.spawn(featureextractor)
                 gevent.sleep(0.001)
 
                 gevent.joinall([g])
