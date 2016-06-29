@@ -24,6 +24,7 @@ from scipy.signal import firwin, remez, kaiser_atten, kaiser_beta
 from scipy.signal import butter, filtfilt, buttord
 
 from sklearn import svm
+from sklearn.metrics import confusion_matrix
 
 from scipy.signal import butter, lfilter
 
@@ -253,23 +254,54 @@ def process(headset):
 
     return features
 
-def classify(afeatures1, afeatures2):
+def classify(afeatures1, afeatures2, featuresize):
 
-    data = np.concatenate ((afeatures1,afeatures2))
-    labels = np.concatenate( (np.ones(afeatures1.shape[0]),(np.ones(afeatures2.shape[0])+1) )  )
+    print 'Feature 1 Size %d,%d' % (afeatures1.shape)
+    print 'Feature 2 Size %d,%d' % (afeatures2.shape)
+
+    print 'Reshape %d' % (afeatures1.shape[0]/(featuresize/afeatures1.shape[1]))
+    print '%d' % featuresize
+    print 'Reshape %d' % (afeatures2.shape[0]/(featuresize/afeatures2.shape[1]))
+
+    trainingfeatures1=afeatures1[0:afeatures1.shape[0]-(afeatures1.shape[0]%featuresize)]
+    trainingfeatures2=afeatures2[0:afeatures2.shape[0]-(afeatures2.shape[0]%featuresize)]
+
+    print 'Feature 1 Size %d,%d' % (trainingfeatures1.shape)
+    print 'Feature 2 Size %d,%d' % (trainingfeatures2.shape)
+
+    print 'Reshape %d' % (trainingfeatures1.shape[0]/(featuresize/trainingfeatures1.shape[1]))
+    print '%d' % featuresize
+    print 'Reshape %d' % (trainingfeatures2.shape[0]/(featuresize/trainingfeatures2.shape[1]))
+
+    trainingfeatures1 = np.reshape( trainingfeatures1, (trainingfeatures1.shape[0]/(featuresize/trainingfeatures1.shape[1]),featuresize) )
+    trainingfeatures2 = np.reshape( trainingfeatures2, (trainingfeatures2.shape[0]/(featuresize/trainingfeatures2.shape[1]),featuresize) )
+
+    print 'Training 1 Size %d,%d' % (trainingfeatures1.shape)
+    print 'Training 2 Size %d,%d' % (trainingfeatures2.shape)
+
+
+    trainingdata = np.concatenate ((trainingfeatures1,trainingfeatures2))
+    traininglabels = np.concatenate( (np.ones(trainingfeatures1.shape[0]),(np.ones(trainingfeatures2.shape[0])+1) )  )
 
     clf = svm.SVC(kernel='linear', C = 1.0)
-    clf.fit(data,labels)
+    clf.fit(trainingdata,traininglabels)
 
-    datapoint = afeatures1.mean(0)
+    testfeatures1=afeatures1[0:afeatures1.shape[0]-(afeatures1.shape[0]%featuresize)]
+    testfeatures2=afeatures1[0:afeatures2.shape[0]-(afeatures2.shape[0]%featuresize)]
 
-    print datapoint
+    testdata=np.concatenate ((trainingfeatures1,trainingfeatures2))
+    testlabels=np.concatenate( (np.ones(trainingfeatures1.shape[0]),(np.ones(trainingfeatures2.shape[0])+1) )  )
 
-    datapoints = []
-    datapoints.append( datapoint )
+    # datapoint = testfeatures1.mean(0)
+    # print datapoint
+    # datapoints = []
+    # datapoints.append( datapoint )
+    # print 'Classifying datapoints...'
+    # print(clf.predict(datapoints))
 
-    print 'Classifying datapoints...'
-    print(clf.predict(datapoints))
+    predlabels = clf.predict(testdata)
+
+    print(confusion_matrix(testlabels, predlabels))
 
   # raw_input('Ready?')
   # train()
@@ -293,10 +325,10 @@ def classify(afeatures1, afeatures2):
 
 
 def featureextractor():
-    headset = OfflineHeadset('Rodrigo',1)
+    headset = OfflineHeadset('Ariel',1)
     features1 = process(headset)
     headset.close()
-    headset = OfflineHeadset('Rodrigo',2)
+    headset = OfflineHeadset('Ariel',2)
     features2 = process(headset)
     headset.close()
 
@@ -307,7 +339,7 @@ def featureextractor():
     print (afeatures2.mean(0))
 
 
-    classify(afeatures1, afeatures2)
+    classify(afeatures1, afeatures2,8)
 
     import matplotlib.pyplot as plt
     fig = plt.figure()
