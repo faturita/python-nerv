@@ -256,28 +256,28 @@ def process(headset):
 
 def classify(afeatures1, afeatures2, featuresize):
 
-    print 'Feature 1 Size %d,%d' % (afeatures1.shape)
-    print 'Feature 2 Size %d,%d' % (afeatures2.shape)
+    #print 'Feature 1 Size %d,%d' % (afeatures1.shape)
+    #print 'Feature 2 Size %d,%d' % (afeatures2.shape)
 
-    print 'Reshape %d' % (afeatures1.shape[0]/(featuresize/afeatures1.shape[1]))
-    print '%d' % featuresize
-    print 'Reshape %d' % (afeatures2.shape[0]/(featuresize/afeatures2.shape[1]))
+    #print 'Reshape %d' % (afeatures1.shape[0]/(featuresize/afeatures1.shape[1]))
+    #print '%d' % featuresize
+    #print 'Reshape %d' % (afeatures2.shape[0]/(featuresize/afeatures2.shape[1]))
 
     trainingfeatures1=afeatures1[0:afeatures1.shape[0]-(afeatures1.shape[0]%featuresize)]
     trainingfeatures2=afeatures2[0:afeatures2.shape[0]-(afeatures2.shape[0]%featuresize)]
 
-    print 'Feature 1 Size %d,%d' % (trainingfeatures1.shape)
-    print 'Feature 2 Size %d,%d' % (trainingfeatures2.shape)
+    #print 'Feature 1 Size %d,%d' % (trainingfeatures1.shape)
+    #print 'Feature 2 Size %d,%d' % (trainingfeatures2.shape)
 
-    print 'Reshape %d' % (trainingfeatures1.shape[0]/(featuresize/trainingfeatures1.shape[1]))
-    print '%d' % featuresize
-    print 'Reshape %d' % (trainingfeatures2.shape[0]/(featuresize/trainingfeatures2.shape[1]))
+    #print 'Reshape %d' % (trainingfeatures1.shape[0]/(featuresize/trainingfeatures1.shape[1]))
+    #print '%d' % featuresize
+    #print 'Reshape %d' % (trainingfeatures2.shape[0]/(featuresize/trainingfeatures2.shape[1]))
 
     trainingfeatures1 = np.reshape( trainingfeatures1, (trainingfeatures1.shape[0]/(featuresize/trainingfeatures1.shape[1]),featuresize) )
     trainingfeatures2 = np.reshape( trainingfeatures2, (trainingfeatures2.shape[0]/(featuresize/trainingfeatures2.shape[1]),featuresize) )
 
-    print 'Training 1 Size %d,%d' % (trainingfeatures1.shape)
-    print 'Training 2 Size %d,%d' % (trainingfeatures2.shape)
+    #print 'Training 1 Size %d,%d' % (trainingfeatures1.shape)
+    #print 'Training 2 Size %d,%d' % (trainingfeatures2.shape)
 
 
     trainingdata = np.concatenate ((trainingfeatures1,trainingfeatures2))
@@ -300,8 +300,10 @@ def classify(afeatures1, afeatures2, featuresize):
     # print(clf.predict(datapoints))
 
     predlabels = clf.predict(testdata)
-
-    print(confusion_matrix(testlabels, predlabels))
+    C = confusion_matrix(testlabels, predlabels)
+    acc = (float(C[0,0])+float(C[1,1])) / ( testdata.shape[0])
+    print '%d Accuracy: %f' % (featuresize,acc)
+    print(C)
 
   # raw_input('Ready?')
   # train()
@@ -325,10 +327,10 @@ def classify(afeatures1, afeatures2, featuresize):
 
 
 def featureextractor():
-    headset = OfflineHeadset('Ariel',1)
+    headset = OfflineHeadset('Rodrigo',1)
     features1 = process(headset)
     headset.close()
-    headset = OfflineHeadset('Ariel',2)
+    headset = OfflineHeadset('Rodrigo',2)
     features2 = process(headset)
     headset.close()
 
@@ -339,6 +341,8 @@ def featureextractor():
     print (afeatures2.mean(0))
 
 
+    classify(afeatures1, afeatures2,2)
+    classify(afeatures1, afeatures2,4)
     classify(afeatures1, afeatures2,8)
 
     import matplotlib.pyplot as plt
