@@ -112,12 +112,13 @@ def onemore():
     readcounter=0
     iterations=0
     while headset.running:
+        print("Reading...")
         packet = headset.dequeue()
         interations=iterations+1
         if (packet != None):
             datapoint = [packet.O1, packet.O2]
-            #print ("Packet:")
-            #print (packet.O1)
+            print ("Packet:")
+            print (packet.O1)
             f.write( str(packet.O1) )
             readcounter=readcounter+1
 
@@ -127,16 +128,30 @@ def onemore():
 
     f.close()
 
+
 if __name__ == "__main__":
+  headset = emotiv.Emotiv(display_output=False)
+  gevent.spawn(headset.setup)
+  gevent.sleep(0)
+  try:
+    onemore()
+  except KeyboardInterrupt:
+    headset.close()
+  finally:
+    headset.close()
+
+if __name__ == "__maidn__":
     KeepRunning = True
     while KeepRunning:
         try:
-            headset = emotiv.Emotiv()
+            headset = emotiv.Emotiv(display_output=False)
             gevent.spawn(headset.setup)
-            g = gevent.spawn(onemore)
-            gevent.sleep(1)
 
-            gevent.joinall([g])
+            gevent.sleep(1)
+            #g = gevent.spawn(onemore)
+            onemore()
+
+            #gevent.joinall([g])
         except KeyboardInterrupt:
             headset.close()
             quit()

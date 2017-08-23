@@ -21,6 +21,8 @@ import os
 
 from scipy.fftpack import fft
 
+import math
+
 from scipy.signal import firwin, remez, kaiser_atten, kaiser_beta
 from scipy.signal import butter, filtfilt, buttord
 
@@ -80,6 +82,9 @@ def psd(y):
 
     return np.sum(np.abs(yf[0:N/2]))
 
+from Plotter import Plotter
+from OfflineHeadset import OfflineHeadset
+
 def process(headset):
     ts = time.time()
     st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
@@ -137,59 +142,89 @@ def process(headset):
 
     return features
 
+def reshapefeature(feature, featuresize):
+    feature=feature[0:feature.shape[0]-(feature.shape[0]%featuresize)]
+    feature = np.reshape( feature, (feature.shape[0]/(featuresize/feature.shape[1]),featuresize) )
 
-def onemore():
-    ts = time.time()
-    st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d-%H-%M-%S')
-    f = open('sensor.dat', 'w')
-    plotter = Plotter(500,0,1000)
-    print ("Starting main thread")
-    readcounter=0
-    iterations=0
+    return feature
 
-    while headset.running:
-        packet = headset.dequeue()
-        interations=iterations+1
-        if (packet != None):
-            datapoint = [packet.O1, packet.O2]
-            #print ("Packet:")
-            #print (packet.O1)
-            plotter.plotdata( [packet.gyro_x, packet.gyro_y, packet.O1[0]])
-            f.write( str(packet.gyro_x) + "\t" + str(packet.gyro_y) + "\n" )
-            readcounter=readcounter+1
 
-        if (readcounter==0 and iterations>50):
-            headset.running = False
-        gevent.sleep(0.001)
+def classify(afeatures1, afeatures2, featuresize):
 
-    f.close()
-    plotter.close()
+    print 'Feature 1 Size %d,%d' % (afeatures1.shape)
+    print 'Feature 2 Size %d,%d' % (afeatures2.shape)
+
+
+    afeatures1 = reshapefeature(afeatures1, featuresize)
+    afeatures2 = reshapefeature(afeatures2, featuresize)
+
+    featuredata = np.concatenate ((afeatures1,afeatures2))
+    featurelabels = np.concatenate( (np.ones(afeatures1.shape[0]),(np.ones(afeatures2.shape[0])+1) )  )
+
+    boundary = int(featuredata.shape[0]/2.0)
+
+    print ('Boundary %d:' % boundary)
+
+    reorder = np.random.permutation(featuredata.shape[0])
+
+    trainingdata = featuredata[reorder[0:boundary]]
+    traininglabels = featurelabels[reorder[0:boundary]]
+
+    testdata = featuredata[reorder[boundary+1:featuredata.shape[0]]]
+    testlabels = featurelabels[reorder[boundary+1:featuredata.shape[0]]]
+
+    print ('Training Dataset Size %d,%d' % (trainingdata.shape))
+
+    clf = svm.SVC(kernel='linear', C = 1.0)
+    clf.fit(trainingdata,traininglabels)
+
+    print 'Test Dataset Size %d,%d' % (testdata.shape)
+
+    # datapoint = testfeatures1.mean(0)
+    # print datapoint
+    # datapoints = []
+    # datapoints.append( datapoint )
+    # print 'Classifying datapoints...'
+    # print(clf.predict(datapoints))
+
+    predlabels = clf.predict(testdata)
+    C = confusion_matrix(testlabels, predlabels)
+    acc = (float(C[0,0])+float(C[1,1])) / ( testdata.shape[0])
+    print 'Feature Dim: %d Accuracy: %f' % (featuresize,acc)
+    print(C)
+
+
+def featureextractor():
+    headset = OfflineHeadset('Rodrigo',1)
+    features1 = process(headset)
+    headset.close()
+    headset = OfflineHeadset('Rodrigo',2)
+    features2 = process(headset)
+    headset.close()
+
+    afeatures1 = np.asarray(features1)
+    afeatures2 = np.asarray(features2)
+
+    print (afeatures1.mean(0))
+    print (afeatures2.mean(0))
+
+
+    classify(afeatures1, afeatures2,2)
+    classify(afeatures1, afeatures2,4)
+    classify(afeatures1, afeatures2,8)
+
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
+
+    ax1.scatter(afeatures1[:,0], afeatures1[:,1], s=10, c='b', marker="x", label='Open')
+    ax1.scatter(afeatures2[:,0], afeatures2[:,1], s=10, c='r', marker="o", label='Closed')
+    plt.xlabel('PSD O2')
+    plt.ylabel('PSD O1')
+    plt.legend(loc='upper left');
+    plt.show()
 
 
 if __name__ == "__main__":
-    while True:
-        KeepRunning = True
-        headset = None
-        while KeepRunning:
-            try:
-                headset = emotiv.Emotiv(display_output=False)
-                #headset = OfflineHeadset('Rodrigo',1)
-                gevent.spawn(headset.setup)
-                #g = gevent.spawn(process, headset)
-                g = gevent.spawn(onemore)
-                gevent.sleep(0.001)
 
-                gevent.joinall([g])
-            except KeyboardInterrupt:
-                headset.close()
-                quit()
-            #except Exception:
-                #pass
-
-            if (headset):
-                headset.close()
-                if (headset.readcounter==0):
-                    print ("Restarting headset object...")
-                    continue
-                else:
-                    quit()
+    featureextractor()

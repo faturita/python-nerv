@@ -26,7 +26,8 @@ from gevent.queue import Queue
 # You can set this lower to reduce idle CPU usage; it has no effect
 # as long as data is being read from the queue, so it is rather a
 # "resume" delay.
-DEVICE_POLL_INTERVAL = 0.001  # in seconds
+DEVICE_POLL_INTERVALd = 0.001  # in seconds
+DEVICE_POLL_INTERVAL = 0  # in seconds
 
 sensor_bits = {
     'F3': [10, 11, 12, 13, 14, 15, 0, 1, 2, 3, 4, 5, 6, 7],
@@ -518,8 +519,9 @@ class Emotiv(object):
                             self.packets.put_nowait(EmotivPacket(data))
                 else:
                     # Doesn't seem to matter how big we make the buffer 32 returned every time, 33 for other platforms
+                    print ("Reading data...")
                     data = hidraw.read(34,100)
-                    #print ("Reading "+str(len(data))+" bytes from emotiv...")
+                    print ("Reading "+str(len(data))+" bytes from emotiv...")
                     iterations=iterations+1
                     if len(data) == 32:
                         # Most of the time the 0 is truncated? That's ok we'll add it...
@@ -556,7 +558,7 @@ class Emotiv(object):
         """
         if is_old_model(sn):
             self.old_model = True
-        print self.old_model
+
         k = ['\0'] * 16
         k[0] = sn[-1]
         k[1] = '\0'
@@ -587,7 +589,9 @@ class Emotiv(object):
         k[15] = 'P'
         key = ''.join(k)
         iv = Random.new().read(AES.block_size)
-        cipher = AES.new(key, AES.MODE_ECB, iv)
+        #cipher = AES.new(key, AES.MODE_ECB, iv)
+        cipher = AES.new(key, AES.MODE_ECB)
+        print ("Key:")
         for i in k:
             print "0x%.02x " % (ord(i))
         while self.running:
