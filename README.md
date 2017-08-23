@@ -1,4 +1,7 @@
-## Installation
+
+# Instalation
+
+## Requirements
 
 * Conda
 * Hidapi
@@ -7,7 +10,7 @@
 
 This is fork of the original [Emokit](https://github.com/openyou/emokit) with some minor modifications and enhancements.
 
-## Mind Robot Synchronization
+## Mind Robot Synchronization
 
 Alpha waves detection based on Epoc Emotiv.
 
