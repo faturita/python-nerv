@@ -51,6 +51,7 @@ class Plotter:
         self.plcounter = self.plcounter+1
 
         if self.plcounter > self.rangeval:
+          self.ax.axis([0, self.rangeval, min(self.x)-100, max(self.x)+100])
           self.plcounter = 0
           self.plotx[:] = []
           self.x[:] = []

@@ -73,6 +73,7 @@ if __name__ == "__main__":
       if (packet != None):
           a = [packet.O1, packet.O2]
           d = packet.O1;
+          dd = packet.O2;
           f = packet.gyro_x;
           e = packet.gyro_y;
           plotter.plotdata( [d[0],f+100,e+100])
