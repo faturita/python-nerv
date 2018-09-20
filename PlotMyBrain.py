@@ -1,3 +1,9 @@
+# coding: latin-1
+#
+# Use to me to plot raw signals from the EPOC Emotiv (Pre 2016)
+# (uses the modified emokit library)
+# (which uses hidraw on Mac)
+#
 import emotiv
 import platform
 import numpy as np
