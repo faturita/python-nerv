@@ -33,7 +33,6 @@ from scipy.signal import butter, lfilter
 
 import artifact as artifact
 
-import emotiv
 
 import matplotlib.pyplot as plt
 
@@ -148,7 +147,6 @@ def reshapefeature(feature, featuresize):
 
     return feature
 
-
 def classify(afeatures1, afeatures2, featuresize):
 
     print 'Feature 1 Size %d,%d' % (afeatures1.shape)
@@ -159,7 +157,7 @@ def classify(afeatures1, afeatures2, featuresize):
     afeatures2 = reshapefeature(afeatures2, featuresize)
 
     featuredata = np.concatenate ((afeatures1,afeatures2))
-    featurelabels = np.concatenate( (np.ones(afeatures1.shape[0]),(np.ones(afeatures2.shape[0])+1) )  )
+    featurelabels = np.concatenate( (np.zeros(afeatures1.shape[0]),(np.zeros(afeatures2.shape[0])+1) )  )
 
     boundary = int(featuredata.shape[0]/2.0)
 
@@ -174,6 +172,25 @@ def classify(afeatures1, afeatures2, featuresize):
     testlabels = featurelabels[reorder[boundary+1:featuredata.shape[0]]]
 
     print ('Training Dataset Size %d,%d' % (trainingdata.shape))
+
+
+    from keras.models import Sequential
+    from keras.layers import Dense
+
+    model = Sequential([
+        Dense(2, activation='relu', input_shape=(trainingdata.shape[1],)),
+        Dense(2, activation='relu'),
+        Dense(2, activation='relu'),
+        Dense(1, activation='sigmoid'),
+    ])
+    model.compile(optimizer='rmsprop',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+    hist = model.fit(trainingdata, traininglabels,
+          batch_size=10, epochs=1000,verbose=0,
+          validation_split=0.4)
+
 
     clf = svm.SVC(kernel='linear', C = 1.0)
     clf.fit(trainingdata,traininglabels)
@@ -192,6 +209,24 @@ def classify(afeatures1, afeatures2, featuresize):
     acc = (float(C[0,0])+float(C[1,1])) / ( testdata.shape[0])
     print 'Feature Dim: %d Accuracy: %f' % (featuresize,acc)
     print(C)
+
+    print 'Keras Accuracy: %f' % (model.evaluate(testdata,testlabels)[1])
+
+    plt.plot(hist.history['loss'])
+    plt.plot(hist.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Val'], loc='upper right')
+    plt.show()
+
+    plt.plot(hist.history['acc'])
+    plt.plot(hist.history['val_acc'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Val'], loc='lower right')
+    plt.show()
 
 
 def featureextractor():
@@ -223,6 +258,9 @@ def featureextractor():
     plt.ylabel('PSD O1')
     plt.legend(loc='upper left');
     plt.show()
+
+    from keras.models import Sequential
+    from keras.layers import Dense
 
 
 if __name__ == "__main__":
