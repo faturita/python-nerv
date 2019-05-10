@@ -1,7 +1,7 @@
 #coding: latin-1
 
 # http://matplotlib.org/faq/virtualenv_faq.html
-# Run me with frameworkpython
+# Run me with ann virtual
 
 # For a single-input model with 2 classes (binary classification):
 from keras.models import Sequential
