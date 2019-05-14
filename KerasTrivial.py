@@ -1,10 +1,8 @@
 #coding: latin-1
-
 # This is a basic keras sample but describes the basic of using Deep Learning for ML classification
 
 from numpy.random import seed
-#seed(1)
-
+seed(1)
 
 # For a single-input model with 2 classes (binary classification):
 from keras.models import Sequential
