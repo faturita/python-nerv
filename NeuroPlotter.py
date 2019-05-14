@@ -35,6 +35,8 @@ import emotiv
 
 import matplotlib.pyplot as plt
 
+from Plotter import Plotter
+
 def butter_bandpass(lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
     low = lowcut / nyq
@@ -160,7 +162,7 @@ def onemore():
 
         if (readcounter==0 and iterations>50):
             headset.running = False
-        gevent.sleep(0.001)
+        gevent.sleep(0)
 
     f.close()
     plotter.close()
@@ -177,7 +179,7 @@ if __name__ == "__main__":
                 gevent.spawn(headset.setup)
                 #g = gevent.spawn(process, headset)
                 g = gevent.spawn(onemore)
-                gevent.sleep(0.001)
+                gevent.sleep(0)
 
                 gevent.joinall([g])
             except KeyboardInterrupt:

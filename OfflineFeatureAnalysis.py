@@ -1,7 +1,7 @@
 #coding: latin-1
 
-# http://matplotlib.org/faq/virtualenv_faq.html
-# Run me with frameworkpython
+# Run with ann virtual environment
+# EPOC Emotiv file format https://www.researchgate.net/publication/332514530_EPOC_Emotiv_EEG_Basics
 
 import numpy as np
 
@@ -28,11 +28,11 @@ from scipy.signal import butter, filtfilt, buttord
 
 from sklearn import svm
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import classification_report, confusion_matrix
 
 from scipy.signal import butter, lfilter
 
 import artifact as artifact
-
 
 import matplotlib.pyplot as plt
 
@@ -152,7 +152,6 @@ def classify(afeatures1, afeatures2, featuresize):
     print 'Feature 1 Size %d,%d' % (afeatures1.shape)
     print 'Feature 2 Size %d,%d' % (afeatures2.shape)
 
-
     afeatures1 = reshapefeature(afeatures1, featuresize)
     afeatures2 = reshapefeature(afeatures2, featuresize)
 
@@ -163,6 +162,7 @@ def classify(afeatures1, afeatures2, featuresize):
 
     print ('Boundary %d:' % boundary)
 
+    # Reshape and shuffle the features
     reorder = np.random.permutation(featuredata.shape[0])
 
     trainingdata = featuredata[reorder[0:boundary]]
@@ -172,15 +172,15 @@ def classify(afeatures1, afeatures2, featuresize):
     testlabels = featurelabels[reorder[boundary+1:featuredata.shape[0]]]
 
     print ('Training Dataset Size %d,%d' % (trainingdata.shape))
+    print 'Test Dataset Size %d,%d' % (testdata.shape)
 
 
     from keras.models import Sequential
     from keras.layers import Dense
 
     model = Sequential([
-        Dense(2, activation='relu', input_shape=(trainingdata.shape[1],)),
-        Dense(2, activation='relu'),
-        Dense(2, activation='relu'),
+        Dense(64, activation='tanh', input_shape=(trainingdata.shape[1],)),
+        Dense(32, activation='tanh'),
         Dense(1, activation='sigmoid'),
     ])
     model.compile(optimizer='rmsprop',
@@ -188,29 +188,35 @@ def classify(afeatures1, afeatures2, featuresize):
               metrics=['accuracy'])
 
     hist = model.fit(trainingdata, traininglabels,
-          batch_size=10, epochs=1000,verbose=0,
+          batch_size=10, epochs=1000*trainingdata.shape[1],verbose=0,
           validation_split=0.4)
 
 
     clf = svm.SVC(kernel='linear', C = 1.0)
     clf.fit(trainingdata,traininglabels)
 
-    print 'Test Dataset Size %d,%d' % (testdata.shape)
-
-    # datapoint = testfeatures1.mean(0)
-    # print datapoint
-    # datapoints = []
-    # datapoints.append( datapoint )
-    # print 'Classifying datapoints...'
-    # print(clf.predict(datapoints))
 
     predlabels = clf.predict(testdata)
     C = confusion_matrix(testlabels, predlabels)
     acc = (float(C[0,0])+float(C[1,1])) / ( testdata.shape[0])
-    print 'Feature Dim: %d Accuracy: %f' % (featuresize,acc)
+    print 'SVM Feature Dim: %d Accuracy: %f' % (featuresize,acc)
     print(C)
 
-    print 'Keras Accuracy: %f' % (model.evaluate(testdata,testlabels)[1])
+    predlabels = model.predict(testdata)
+    #print(predlabels)
+    predlabels = predlabels.round()
+    #print(predlabels)
+    C = confusion_matrix(testlabels, predlabels)
+    acc = (float(C[0,0])+float(C[1,1])) / ( testdata.shape[0])
+    print 'Keras Feature Dim: %d Accuracy: %f' % (featuresize,acc)
+    print(C)
+
+    print(model.evaluate(testdata,testlabels))
+    print 'Keras Model Accuracy: %f' % (model.evaluate(testdata,testlabels)[1])
+
+    target_names = ['Open', 'Closed']
+    report = classification_report(testlabels, predlabels, target_names=target_names)
+    print(report)
 
     plt.plot(hist.history['loss'])
     plt.plot(hist.history['val_loss'])
@@ -230,10 +236,12 @@ def classify(afeatures1, afeatures2, featuresize):
 
 
 def featureextractor():
-    headset = OfflineHeadset('Rodrigo',1)
+    # Get features from label 1.
+    headset = OfflineHeadset('Subject',1)
     features1 = process(headset)
     headset.close()
-    headset = OfflineHeadset('Rodrigo',2)
+    # Get features from label 2
+    headset = OfflineHeadset('Subject',2)
     features2 = process(headset)
     headset.close()
 
@@ -243,7 +251,18 @@ def featureextractor():
     print (afeatures1.mean(0))
     print (afeatures2.mean(0))
 
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    ax1 = fig.add_subplot(111)
 
+    ax1.scatter(afeatures1[:,0], afeatures1[:,1], s=10, c='b', marker="x", label='Open')
+    ax1.scatter(afeatures2[:,0], afeatures2[:,1], s=10, c='r', marker="o", label='Closed')
+    plt.xlabel('PSD O2')
+    plt.ylabel('PSD O1')
+    plt.legend(loc='upper left')
+    plt.show()
+
+    # Group time features in tuples, 4-tuples and 8-tuples and classify them
     classify(afeatures1, afeatures2,2)
     classify(afeatures1, afeatures2,4)
     classify(afeatures1, afeatures2,8)
@@ -256,11 +275,9 @@ def featureextractor():
     ax1.scatter(afeatures2[:,0], afeatures2[:,1], s=10, c='r', marker="o", label='Closed')
     plt.xlabel('PSD O2')
     plt.ylabel('PSD O1')
-    plt.legend(loc='upper left');
+    plt.legend(loc='upper left')
     plt.show()
 
-    from keras.models import Sequential
-    from keras.layers import Dense
 
 
 if __name__ == "__main__":

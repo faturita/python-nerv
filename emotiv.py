@@ -398,6 +398,8 @@ class Emotiv(object):
         }
         self.serial_number = serial_number  # You will need to set this manually for OS X.
         self.old_model = False
+        self.f = open('sensor.dat','w')
+        self.logdown = False
 
     def setup(self):
         """
@@ -600,8 +602,13 @@ class Emotiv(object):
                 if len(task):
                     try:
                         data = cipher.decrypt(task[:16]) + cipher.decrypt(task[16:])
-                        self.packets.put_nowait(EmotivPacket(data, self.sensors, self.old_model))
+                        packet = EmotivPacket(data, self.sensors, self.old_model)
+                        self.packets.put_nowait(packet)
                         self.packets_processed += 1
+                                                
+                        if (self.logdown):
+                            self.f.write( str(packet.counter) + ' ' + str(packet.AF3[0]) + ' ' + str(packet.F7[0]) + ' ' + str(packet.F3[0]) + ' ' + str(packet.FC5[0]) + ' ' + str(packet.T7[0]) + ' ' + str(packet.P7[0]) + ' ' + str(packet.O1[0]) + ' ' + str(packet.O2[0]) + ' ' + str(packet.P8[0]) + ' ' + str(packet.T8[0]) + ' ' + str(packet.FC6[0]) + ' ' + str(packet.F4[0]) + ' ' + str(packet.F8[0]) + ' ' + str(packet.AF4[0]) + ' ' + str(packet.gyro_x) + ' ' + str(packet.gyro_y) + ' ' + '0 0 0 0 0' + '\n' )
+
                     except Exception, ex:
                         print "Crypto emotiv.py(line=573): " + ex.message
                 gevent.sleep(DEVICE_POLL_INTERVAL)
@@ -623,6 +630,7 @@ class Emotiv(object):
         Shuts down the running greenlets.
         """
         self.running = False
+        self.f.close()
 
     def update_console(self):
         """
