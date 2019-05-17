@@ -77,12 +77,22 @@ class Plotter:
           self.w[:] = []
 
 if __name__ == "__main__":
-  headset = emotiv.Emotiv(display_output=False)
   plotter = Plotter(500,0,2000)
-  gevent.spawn(headset.setup)
-  gevent.sleep(0)
+  connected = False
+  while (not connected):
+    headset = emotiv.Emotiv(display_output=True)
+    gevent.spawn(headset.setup)
+    
+    gevent.sleep(0.5)
+
+    if (not headset.ready):
+      print("Emotiv connection is not ready. Restarting...")
+      headset.close()
+      gevent.sleep(10)
+    else:
+      connected = True
   try:
-    for i in range(1,128*20):
+    for i in range(1,128*40):
       packet = headset.dequeue()
       if (packet != None):
           pac = [packet.O1, packet.O2]
@@ -98,3 +108,5 @@ if __name__ == "__main__":
     headset.close()
   finally:
     headset.close()
+
+gevent.sleep(10)

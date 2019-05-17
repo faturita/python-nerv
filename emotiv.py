@@ -370,6 +370,7 @@ class Emotiv(object):
         Sets up initial values.
         """
         self.running = True
+        self.ready = False
         self.packets = Queue()
         self.packets_received = 0
         self.packets_processed = 0
@@ -529,6 +530,7 @@ class Emotiv(object):
                         # Most of the time the 0 is truncated? That's ok we'll add it...
                         data.insert(0, 0)
                     if len(data)>0:
+                        self.ready = True
                         self.readcounter=self.readcounter+1
                         if _os_decryption:
                             self.packets.put_nowait(EmotivPacket(data))
@@ -549,8 +551,10 @@ class Emotiv(object):
             gevent.sleep(DEVICE_POLL_INTERVAL)
         if _os_decryption:
             hidraw.close()
+            print("Closing...")
         else:
             hidraw.close()
+            print("Closing...")
         gevent.kill(crypto, KeyboardInterrupt)
         gevent.kill(console_updater, KeyboardInterrupt)
 
