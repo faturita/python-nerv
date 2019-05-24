@@ -237,11 +237,11 @@ def classify(afeatures1, afeatures2, featuresize):
 
 def featureextractor():
     # Get features from label 1.
-    headset = OfflineHeadset('Subject',1)
+    headset = OfflineHeadset('Sleepy',1)
     features1 = process(headset)
     headset.close()
     # Get features from label 2
-    headset = OfflineHeadset('Subject',2)
+    headset = OfflineHeadset('Sleepy',2)
     features2 = process(headset)
     headset.close()
 
