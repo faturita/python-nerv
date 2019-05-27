@@ -31,7 +31,7 @@ if __name__ == "__main__":
     else:
       connected = True
   try:
-    while (headset.packets_processed<128*60):
+    while (headset.packets_processed<128*40):
       packet = headset.dequeue()
       if (packet != None):
           #pac = [packet.O1, packet.O2]
