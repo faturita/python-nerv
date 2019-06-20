@@ -30,7 +30,7 @@ mat['data'][0][0][4]
 # Data point zero for the eight channels.  Should be in V.
 signal = mat['data'][0][0][1] * pow(10,6)
 
-print signal.shape
+print (signal.shape)
 
 ch_names=[ 'Fz'  ,  'Cz',    'Pz' ,   'Oz'  ,  'P3'  ,  'P4'   , 'PO7'   , 'PO8']
 ch_types= ['eeg'] * signal.shape[1]
@@ -45,7 +45,7 @@ eeg_mne.filter(1,20)
 
 eeg_mne.plot_psd()
 
-eeg_mne.plot(n_channels=10, block=True)
+eeg_mne.plot(scalings='auto',n_channels=10, block=True)
 
 
 # Now get the trial information
@@ -58,7 +58,7 @@ t_type = mat['data'][0][0][2]
 
 signal_events = np.concatenate([signal, t_type],1)
 
-info_events = mne.create_info(ch_names_events,256, ch_types_events,true)
+info_events = mne.create_info(ch_names_events,256, ch_types_events)
 
 eeg_events = mne.io.RawArray(signal_events.T, info_events)
 
@@ -72,7 +72,7 @@ tmax = 1
 epochs = mne.Epochs(eeg_mne, event_times, event_id, tmin, tmax)
 
 print ('Epochs x channels x time')
-print epochs.get_data().shape
+print (epochs.get_data().shape)
 
 evoked = epochs.average()
 
@@ -81,7 +81,7 @@ evoked.plot()
 
 epochsn = mne.Epochs(eeg_mne, event_times, {'first':1}, tmin, tmax)
 
-print epochsn.get_data().shape
+print (epochsn.get_data().shape)
 
 evokedn = epochsn.average()
 
@@ -96,8 +96,8 @@ eeg_mne.plot_sensors()
 
 eeg_mne.plot(scalings='auto',block=True)
 
-
-from sklearn.cross_validation import StratifiedKFold
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import classification_report, confusion_matrix
@@ -118,11 +118,11 @@ epochs = mne.Epochs(eeg_mne, event_times, event_id, tmin, tmax, proj=False,
 labels = epochs.events[:, -1]
 
 # Cross validator
-cv = StratifiedKFold(y=labels, n_folds=10, shuffle=True, random_state=42)
+cv = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 
 # Do cross-validation
 preds = np.empty(len(labels))
-for train, test in cv:
+for train, test in cv.split(epochs,labels):
     cf=clf.fit(epochs[train], labels[train])
     preds[test] = clf.predict(epochs[test])
 

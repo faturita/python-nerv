@@ -10,7 +10,6 @@ from struct import *
 
 import sys, select
 
-#import emotiv
 import platform
 import socket
 import gevent
@@ -107,10 +106,12 @@ def process(headset):
         interations=iterations+1
         if (packet != None):
             datapoint = [packet.O1[0], packet.O2[0]]
+
             #plotter.plotdata( [packet.gyro_x, packet.O2[0], packet.O1[0]])
             log.write( str(packet.gyro_x) + "\t" + str(packet.gyro_y) + "\n" )
 
             window.append( datapoint )
+
 
             if len(window)>=N:
                 if not artifact.isartifact(window):
@@ -124,12 +125,13 @@ def process(headset):
                     o1 = psd(awindow[:,0])
                     o2 = psd(awindow[:,1])
 
-                    print o1, o2
+                    print (o1, o2)
 
                     features.append( [o1, o2] )
 
                 # Slide window
                 window = window[N/2:N]
+                #window = window[1:N]
 
             readcounter=readcounter+1
 
@@ -224,7 +226,7 @@ def classify(afeatures1, afeatures2, featuresize):
     plt.ylabel('Loss')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Val'], loc='upper right')
-    plt.show()
+    #plt.show()
 
     plt.plot(hist.history['acc'])
     plt.plot(hist.history['val_acc'])
@@ -232,16 +234,16 @@ def classify(afeatures1, afeatures2, featuresize):
     plt.ylabel('Accuracy')
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Val'], loc='lower right')
-    plt.show()
+    #plt.show()
 
 
 def featureextractor():
     # Get features from label 1.
-    headset = OfflineHeadset('Subject',1)
+    headset = OfflineHeadset('Rodrigo',1,'Alfa')
     features1 = process(headset)
     headset.close()
     # Get features from label 2
-    headset = OfflineHeadset('Subject',2)
+    headset = OfflineHeadset('Rodrigo',2,'Alfa')
     features2 = process(headset)
     headset.close()
 

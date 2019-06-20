@@ -13,9 +13,11 @@ class Packet():
 
 
 class OfflineHeadset:
-    def __init__(self, subject, label):
+    def __init__(self, subject,label,paradigm='Alfa'):
         # @TODO Need to parametrize this.
-        self.basefilename = '/Users/rramele/Data/%s/Alfa/e.%d.l.%d.dat'
+        # @NOTE Search for datasets on current "Data" directory
+        self.basefilename = 'Data/%s/%s/e.%d.l.%d.dat'
+        self.paradigm = paradigm
         self.readcounter = 0
         self.running = True
         self.label = label
@@ -27,7 +29,7 @@ class OfflineHeadset:
         pass
 
     def setupfile(self):
-        self.datasetfile = self.basefilename % (self.subject,self.fileindex,self.label)
+        self.datasetfile = self.basefilename % (self.subject,self.paradigm,self.fileindex,self.label)
         print self.datasetfile
         if os.path.isfile(self.datasetfile):
             if self.f:

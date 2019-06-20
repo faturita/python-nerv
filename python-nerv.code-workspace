@@ -2,6 +2,12 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "/Users/rramele/work/python-toolbox"
+		},
+		{
+			"path": "/Users/rramele/work/python-mindwave"
 		}
 	],
 	"settings": {
