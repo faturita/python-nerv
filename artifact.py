@@ -28,4 +28,4 @@ def isartifact(window, threshold=80):
 if __name__ == "__main__":
     window = [ [10,11],[10,12],[9,8],[10,10],[10,9],[10,11],[12,9] ]
 
-    print isartifact(window)
+    print (isartifact(window))

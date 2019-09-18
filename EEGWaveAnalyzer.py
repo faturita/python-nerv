@@ -31,7 +31,7 @@ mat['data'][0][0][4]
 # Data point zero for the eight channels.  Should be in V.
 signal = mat['data'][0][0][0] * pow(10,6)
 
-print signal.shape
+print (signal.shape)
 
 ch_names=[ 'Fz'  ,  'Cz',    'P3' ,   'Pz'  ,  'P4'  ,  'PO7'   , 'PO8'   , 'Oz']
 ch_types= ['eeg'] * signal.shape[1]
@@ -77,7 +77,7 @@ epochs = mne.Epochs(eeg_mne, event_times, { 'second':2 }, tmin, tmax)
 
 print ('Hits:')
 print ('Epochs x channels x time')
-print epochs.get_data().shape
+print (epochs.get_data().shape)
 
 evoked = epochs.average()
 evoked.plot()
@@ -91,7 +91,7 @@ epochs = mne.Epochs(eeg_mne, event_times, {'first':1}, tmin, tmax)
 
 print ('Nohits:')
 print ('Epochs x channels x time')
-print epochs.get_data().shape
+print (epochs.get_data().shape)
 
 evoked = epochs.average()
 evoked.plot()
@@ -132,7 +132,7 @@ mat['data'][0][0][4]
 # Data point zero for the eight channels.  Should be in V.
 signal = mat['data'][0][0][0] * pow(10,6)
 
-print signal.shape
+print (signal.shape)
 
 ch_names=[ 'Fz'  ,  'Cz',    'P3' ,   'Pz'  ,  'P4'  ,  'PO7'   , 'PO8'   , 'Oz']
 ch_types= ['eeg'] * signal.shape[1]
@@ -178,7 +178,7 @@ epochs = mne.Epochs(eeg_mne, event_times, { 'second':2 }, tmin, tmax)
 
 print ('Hits:')
 print ('Epochs x channels x time')
-print epochs.get_data().shape
+print (epochs.get_data().shape)
 
 evoked = epochs.average()
 evoked.plot()
@@ -192,7 +192,7 @@ epochs = mne.Epochs(eeg_mne, event_times, {'first':1}, tmin, tmax)
 
 print ('Nohits:')
 print ('Epochs x channels x time')
-print epochs.get_data().shape
+print (epochs.get_data().shape)
 
 evoked = epochs.average()
 evoked.plot()
