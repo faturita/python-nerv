@@ -18,7 +18,7 @@ import os
 if __name__ == "__main__":
   connected = False
   while (not connected):
-    headset = emotiv.Emotiv(display_output=True)
+    headset = emotiv.Emotiv(display_output=False)
     headset.logdown = True
     gevent.spawn(headset.setup)
     

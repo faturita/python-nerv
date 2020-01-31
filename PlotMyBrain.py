@@ -96,8 +96,8 @@ if __name__ == "__main__":
       packet = headset.dequeue()
       if (packet != None):
           pac = [packet.O1, packet.O2]
-          o1 = packet.O1;
-          o2 = packet.O2;
+          o1 = packet.F7;
+          o2 = packet.F8;
           gyx = packet.gyro_x;
           gyy = packet.gyro_y;
           plotter.plotdata( [o1[0],o2[0], gyx+100,gyy+100])

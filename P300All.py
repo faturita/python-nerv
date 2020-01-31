@@ -38,8 +38,8 @@ for subject in range(1,9):
     # Data point zero for the eight channels.  Should be in V.
     signal = mat['data'][0][0][1] * pow(10,6)
 
-    print 'Signal shape:'
-    print signal.shape
+    print ('Signal shape:')
+    print (signal.shape)
 
     ch_names=[ 'Fz'  ,  'Cz',    'Pz' ,   'Oz'  ,  'P3'  ,  'P4'   , 'PO7'   , 'PO8']
     ch_types= ['eeg'] * signal.shape[1]
@@ -50,7 +50,7 @@ for subject in range(1,9):
 
     #eeg_mne.plot_psd()
 
-    print 'Bandpass 1-20 Hz signal'
+    print ('Bandpass 1-20 Hz signal')
     eeg_mne.filter(1,20)
 
     #eeg_mne.plot_psd()
@@ -92,7 +92,7 @@ for subject in range(1,9):
 
     print ('Hits:')
     print ('Epochs x channels x time')
-    print epochs.get_data().shape
+    print (epochs.get_data().shape)
 
     evoked = epochs.average()
     #evoked.plot()
@@ -102,7 +102,7 @@ for subject in range(1,9):
 
     print ('Nohits:')
     print ('Epochs x channels x time')
-    print epochs.get_data().shape
+    print (epochs.get_data().shape)
 
     evoked = epochs.average()
     #evoked.plot()
@@ -135,7 +135,7 @@ for subject in range(1,9):
     #evoked_hit.plot()
     #evoked_nohit.plot()
 
-    from sklearn.cross_validation import StratifiedKFold
+    from sklearn.model_selection import StratifiedKFold
     from sklearn.pipeline import make_pipeline
     from sklearn.linear_model import LogisticRegression
     from sklearn.metrics import classification_report, confusion_matrix
@@ -151,16 +151,16 @@ for subject in range(1,9):
     lbls = labels
 
     # Cross validator
-    cv = StratifiedKFold(y=labels, n_folds=10, shuffle=True, random_state=42)
+    cv = StratifiedKFold( n_splits=10, shuffle=True, random_state=42)
 
     epochs.resample(20, npad="auto")
 
     print ('Epochs x channels x time')
-    print epochs.get_data().shape
+    print (epochs.get_data().shape)
 
     # Do cross-validation
     preds = np.empty(len(labels))
-    for train, test in cv:
+    for train, test in cv.split(epochs, labels):
         cf=clf.fit(epochs[train], labels[train])
         preds[test] = clf.predict(epochs[test])
 
@@ -179,7 +179,7 @@ for subject in range(1,9):
 
     globalacc.append(acc)
 
-    print 'Averaged classification per trials (20 reps vs 100 reps)'
+    print ('Averaged classification per trials (20 reps vs 100 reps)')
 
     repetitions=120
 
@@ -190,7 +190,7 @@ for subject in range(1,9):
         epochstrial2 = epochstrial['second']
 
         print ('Epochs x channels x time')
-        print epochstrial.get_data().shape
+        print (epochstrial.get_data().shape)
 
         if (trial==0):
             evoked_nohit = epochstrial1.average()
@@ -204,7 +204,7 @@ for subject in range(1,9):
     #evokeds = mne.EvokedArray(evoked_data, info=info, tmin=-0.2,comment='Arbitrary', nave=nave)
     labels = np.array([1,2]*35)
 
-    print 'Randomize values...'
+    print ('Randomize values...')
     #labels = np.random.randint(1,3,70)
 
     events = np.array([
@@ -283,13 +283,13 @@ for subject in range(1,9):
     events[:,2] = labels
 
     # Cross validator
-    cv = StratifiedKFold(y=labels, n_folds=10, shuffle=True, random_state=42)
+    cv = StratifiedKFold( n_splits=10, shuffle=True, random_state=42)
 
     custom_epochs = mne.EpochsArray(epochs_data, info, events, tmin, event_id)
 
     # Do cross-validation
     preds = np.empty(len(labels))
-    for train, test in cv:
+    for train, test in cv.split(custom_epochs, labels):
         cf=clf.fit(custom_epochs[train], labels[train])
         preds[test] = clf.predict(custom_epochs[test])
 
@@ -316,7 +316,7 @@ for subject in range(1,9):
 
     globalavgacc.append(acc)
 
-    print 'Averaged classification per row/column'
+    print ('Averaged classification per row/column')
 
     event_times = mne.find_events(eeg_events, stim_channel='t_stim')
     event_id = {'Row1':1,'Row2':2,'Row3':3,'Row4':4,'Row5':5,'Row6':6,'Col1':7,'Col2':8,'Col3':9,'Col4':10,'Col5':11,'Col6':12}
