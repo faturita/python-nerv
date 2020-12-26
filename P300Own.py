@@ -9,7 +9,7 @@ import numpy as np
 
 #mat = scipy.io.loadmat('/Users/rramele/work/EEGWave/signals/p300-subject-drug-21.mat')
 
-mat = scipy.io.loadmat('/Users/rramele/work/gsync/data/p300-subject-21-drug.mat')
+mat = scipy.io.loadmat('/Users/rramele/work/gsync/data/p300-subject-21.mat')
 
 # dtype=[('X', 'O'), ('y', 'O'), ('y_stim', 'O'), ('trial', 'O'), ('flash', 'O')])
 mat['data'][0][0][0]
