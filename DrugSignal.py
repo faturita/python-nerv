@@ -79,8 +79,12 @@ eeg_events.filter(1,20)
 
 fig=eeg_events.plot_psd()
 
-eeg_events.plot(scalings='auto',n_channels=8,events=signal_events,block=True)
+event_times = mne.find_events(eeg_events, stim_channel='t_type')
 
+
+eeg_events.plot(scalings='auto',n_channels=8,events=event_times,block=True)
+
+# %%
 def getstims(eeg_mne, eeg_events):
     '''
     Get the stimulations.  These are the FLASHINGS of rows and columns.
