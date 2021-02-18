@@ -32,7 +32,7 @@ def DrugSignal(signal, t_flash):
     '''
     for i in range(0,4200):
         if (t_flash[i,3]==2):
-            signal[t_flash[i,0]-1:t_flash[i,0]+250-1,:] = erptemplate1
+            signal[t_flash[i,0]-1:t_flash[i,0]+250-1,:] = (erptemplate1*3)
 
     return signal
 
@@ -45,7 +45,8 @@ mat = scipy.io.loadmat('./dataset/p300-subject-25.mat')
 
 # coding: latin-1
 # Data point zero for the eight channels.  Should be in V.
-signal = mat['data'][0][0][0] * pow(10,6)
+signal = mat['data'][0][0][0] 
+#* pow(10,6)
 
 # Trials
 t_trials = mat['data'][0][0][3]
@@ -53,7 +54,7 @@ t_trials = mat['data'][0][0][3]
 # Flash matrix
 t_flash = mat['data'][0][0][4]
 
-#signal = DrugSignal(signal, t_flash)
+signal = DrugSignal(signal, t_flash)
 
 t_stim = mat['data'][0][0][2]
 t_type = mat['data'][0][0][1]
@@ -128,8 +129,8 @@ def getlabels(eeg_mne, eeg_events):
 epochs, labels = getlabels(eeg_events, eeg_events)
 
 # Downsample the original FS=250 Hz signal to >>> 20 Hz
-epochs.resample(20, npad="auto")
-stimepochs.resample(20, npad="auto")
+#epochs.resample(20, npad="auto")
+#stimepochs.resample(20, npad="auto")
 repetitions=120
 
 # %%
