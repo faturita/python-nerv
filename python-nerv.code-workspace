@@ -17,7 +17,7 @@
 		}
 	],
 	"settings": {
-		"python.pythonPath": "/anaconda2/envs/ann/bin/python",
+		"python.pythonPath": "/anaconda2/envs/mne3/bin/python",
 		"python.dataScience.jupyterServerURI": "local"
 	}
 }

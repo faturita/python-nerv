@@ -32,7 +32,7 @@ def DrugSignal(signal, t_flash):
     '''
     for i in range(0,4200):
         if (t_flash[i,3]==2):
-            signal[t_flash[i,0]-1:t_flash[i,0]+250-1,:] = (erptemplate1*3)
+            signal[t_flash[i,0]-1:t_flash[i,0]+250-1,:] += (erptemplate1*3)
 
     return signal
 
@@ -40,6 +40,8 @@ def DrugSignal(signal, t_flash):
 # Now load the basal EEG stream
 mat = scipy.io.loadmat('./dataset/p300-subject-25.mat')
 #mat = scipy.io.loadmat('./dataset/p300-subject-26.mat')
+#mat = scipy.io.loadmat('/Users/rramele/./GoogleDrive/Data/P300/p300-subject-21.mat')
+#mat = scipy.io.loadmat('/Users/rramele/./GoogleDrive/Data/P300/p300-subject-06.mat')
 
 # In[1]:
 
@@ -71,19 +73,39 @@ ch_types_events = ch_types + ['misc'] + ['misc']
 
 signal_events = np.concatenate([signal, t_stim, t_type],1)
 info_events = mne.create_info(ch_names_events,250, ch_types_events)
-eeg_events = mne.io.RawArray(signal_events.T, info_events)
+eeg = mne.io.RawArray(signal_events.T, info_events)
 
 # Do some basic signal processing (1-20 band pass filter)
-fig=eeg_events.plot_psd()
+fig=eeg.plot_psd()
 
-eeg_events.filter(1,20)
+eeg.filter(1,20)
 
-fig=eeg_events.plot_psd()
+fig=eeg.plot_psd()
 
-event_times = mne.find_events(eeg_events, stim_channel='t_type')
+event_times = mne.find_events(eeg, stim_channel='t_type')    
 
 
-eeg_events.plot(scalings='auto',n_channels=8,events=event_times,block=True)
+
+eeg.plot(scalings='auto',n_channels=8,events=event_times,block=True)   # scalings=10e-05
+
+# In[1]
+if (np.unique(t_flash[:,0]).shape[0] != 4200):
+    u,c = np.unique( t_flash[:,0], return_counts=True)
+    dup = u[c>1]
+    for i in range(dup.shape[0]):
+        idx = np.where( t_flash[:,0] == dup[i] )[0][0]
+        t_flash[idx,0]  -= 1
+        t_flash[idx,1]  = 1
+        t_type[t_flash[idx,0]] = t_flash[idx,3]
+        t_stim[t_flash[idx,0]] = t_flash[idx,2]
+
+
+
+
+# In[1]:
+np.unique(t_flash[:,0]).shape
+assert  np.unique(t_flash[:,0]).shape[0] == 4200, 'Problem with experiment structure.  There aren''t enough events.'
+
 
 # %%
 def getstims(eeg_mne, eeg_events):
@@ -93,40 +115,53 @@ def getstims(eeg_mne, eeg_events):
     tmin = 0
     tmax = 0.8
     reject = None
-    event_times = mne.find_events(eeg_events, stim_channel='t_stim')
+    event_times = mne.find_events(eeg_events, stim_channel='t_stim',shortest_event=0, verbose=True, min_duration=0.000001, consecutive=True)
     event_id = {'Row1':1,'Row2':2,'Row3':3,'Row4':4,'Row5':5,'Row6':6,'Col1':7,'Col2':8,'Col3':9,'Col4':10,'Col5':11,'Col6':12}
 
 
     epochs = mne.Epochs(eeg_mne, event_times, event_id, tmin, tmax, proj=False,
                     baseline=None, reject=reject, preload=True,
-                    verbose=True)
+                    verbose=True, reject_by_annotation=None)
 
 
     stims = event_times[:,-1]
 
     return [epochs,stims]
 
-stimepochs, stims = getstims(eeg_events, eeg_events)
+stimepochs, stims = getstims(eeg, eeg)
 
-def getlabels(eeg_mne, eeg_events):
+
+def getlabels(eeg_mne, eeg_events, event_id):
     '''
     Get the hit/no hits labels.  These are the FLASHINGS of rows and columns but selected if they are the ones that will
     trigger the P300 response or not.
     '''
-    event_id = { 'first':1, 'second':2 }
+    #event_id = { 'first':1, 'second':2 }
     #baseline = (0.0, 0.2)
     #reject = {'eeg': 70 * pow(10,6)}
     tmin = 0
     tmax = 0.8
     reject = None
-    event_times = mne.find_events(eeg_events, stim_channel='t_type')
+    event_times = mne.find_events(eeg_events, stim_channel='t_type', shortest_event=0, verbose=True, min_duration=0.000001, consecutive=True)
     epochs = mne.Epochs(eeg_mne, event_times, event_id, tmin, tmax, proj=False,
                     baseline=None, reject=reject, preload=True,
-                    verbose=True)
+                    verbose=True, reject_by_annotation=None)
     labels = epochs.events[:, -1]
     return [epochs, labels]
 
-epochs, labels = getlabels(eeg_events, eeg_events)
+epochs, labels = getlabels(eeg, eeg, {'first':1})
+
+epocked = epochs.average()
+epocked.plot(window_title='NoHit Averaged Signals')
+
+
+epochs, labels = getlabels(eeg, eeg, {'second':2})
+
+epocked = epochs.average()
+epocked.plot(window_title='Hit Averaged Signals')
+
+epochs, labels = getlabels(eeg, eeg, { 'first':1, 'second':2})
+
 
 # Downsample the original FS=250 Hz signal to >>> 20 Hz
 #epochs.resample(20, npad="auto")
@@ -382,3 +417,14 @@ for i in range(0,12):
     plt.plot(eeg_data[i])
     plt.show()
 # %%
+
+# Classification report
+target_names = ['nohit', 'hit']
+
+report = classification_report(classlabels[test], clf.predict(X[test]), target_names=target_names)
+print(report)
+
+cm = confusion_matrix(classlabels[test], clf.predict(X[test]) )
+print (cm)
+cm_normalized = cm.astype(float) / cm.sum(axis=1)[:, np.newaxis]
+acc=(cm[0,0]+cm[1,1])*1.0/(np.sum(cm))
